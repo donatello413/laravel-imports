@@ -52,10 +52,17 @@ final class ImportCategoriesCommand extends Command
     }
 
     /**
+     * @return array{
+     *      responseDto: class-string<T>,
+     *      event: string,
+     *      limit: int,
+     *      importRequestDto: ImportRequestDto
+     *  }
      * @throws ImportConfigurationException
      */
     private function getPreparedData(): array
     {
+        /** @var class-string<T> $responseDto */
         $responseDto = $this->getEntity();
         $limit = $this->getLimit();
         $page = $this->getPage();
@@ -83,8 +90,10 @@ final class ImportCategoriesCommand extends Command
         ];
     }
 
+    /** @return class-string<T> */
     private function getEntity(): string
     {
+        /** @var array<array{dto: class-string<T>, endpoint: string, event: class-string}> $entities */
         $entities = array_column(config('import.import_entities'), 'dto');
 
         return $this->choice(
@@ -123,6 +132,12 @@ final class ImportCategoriesCommand extends Command
         );
     }
 
+    /**
+     * @param string $questionText
+     * @param int $default
+     * @param callable $validator
+     * @return int
+     */
     private function askWithValidation(string $questionText, int $default, callable $validator): int
     {
         $question = new Question(question: $questionText, default: $default);
@@ -133,7 +148,7 @@ final class ImportCategoriesCommand extends Command
 
         while ($attempts < $maxAttempts) {
             try {
-                return $this->output->askQuestion($question);
+                return (int) $this->output->askQuestion($question);
             } catch (InvalidArgumentException $e) {
                 $this->components->error($e->getMessage());
                 $attempts++;
@@ -150,7 +165,8 @@ final class ImportCategoriesCommand extends Command
      */
     private function getEndpoint(string $responseDto): string
     {
-        $entitiesConfig = config('import.import_entities');
+        /** @var array<array{dto: class-string, endpoint: string, event: class-string}> $entities */
+        $entitiesConfig = config('import.import_entities', []);
 
         foreach ($entitiesConfig as $entity) {
             if ($entity['dto'] === $responseDto) {
@@ -166,7 +182,8 @@ final class ImportCategoriesCommand extends Command
      */
     private function getImportProcessingEvent(string $responseDto): string
     {
-        $entitiesConfig = config('import.import_entities');
+        /** @var array<array{dto: class-string, endpoint: string, event: class-string}> $entities */
+        $entitiesConfig = config('import.import_entities', []);
 
         foreach ($entitiesConfig as $entity) {
             if ($entity['dto'] === $responseDto) {
