@@ -15,6 +15,4 @@ return [
 //            'event' => CategoryImportEvent::class,
         ],
     ],
-
-    // todo добавть примеры
 ];
