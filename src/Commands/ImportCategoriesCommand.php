@@ -8,6 +8,7 @@ use D413\LaravelImport\Connector\EntityImportConnectorInterface;
 use D413\LaravelImport\Exceptions\ImportConfigurationException;
 use D413\LaravelImport\Exceptions\ImportTransportException;
 use D413\LaravelImport\Transfers\ImportRequestDto;
+use D413\LaravelImport\Transfers\ResponseDtoInterface;
 use Generator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
@@ -90,18 +91,26 @@ final class ImportCategoriesCommand extends Command
         ];
     }
 
-    /** @return class-string<T> */
+    /** @return class-string<T>
+     * @throws ImportConfigurationException
+     */
     private function getEntity(): string
     {
         /** @var array<array{dto: class-string<T>, endpoint: string, event: class-string}> $entities */
         $entities = array_column(config('import.import_entities'), 'dto');
 
-        return $this->choice(
+        $selectedDto = $this->choice(
             question: 'What do you want to import ? ',
             choices: $entities,
             attempts: 3,
             multiple: false
         );
+
+        if (!in_array(ResponseDtoInterface::class, class_implements($selectedDto), true)) {
+            throw new ImportConfigurationException("{$selectedDto} must implement ResponseDtoInterface.");
+        }
+
+        return $selectedDto;
     }
 
     private function getLimit(): int
